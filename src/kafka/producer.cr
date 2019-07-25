@@ -13,7 +13,6 @@ module Kafka
       @pErrStr = LibC.malloc(ERRLEN).as(UInt8*)
       @handle = LibKafkaC.kafka_new(LibKafkaC::TYPE_PRODUCER, conf, @pErrStr, ERRLEN)
       raise "Kafka: Unable to create new producer" if @handle == 0_u64
-      start_polling(@handle)
     end
 
     # Set the topic to use for *produce()* calls.
@@ -37,11 +36,14 @@ module Kafka
       return true
     end
 
-    # :nodoc:
-    private def start_polling(handle)
+    def poll
+      LibKafkaC.poll(@handle, 500)
+    end
+
+    def start_polling
       spawn do
         while @keep_running
-          LibKafkaC.poll(handle, 500)
+          poll
         end
       end
     end
